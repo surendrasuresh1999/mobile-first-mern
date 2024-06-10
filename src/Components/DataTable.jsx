@@ -17,8 +17,8 @@ import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
 import LastPageIcon from "@mui/icons-material/LastPage";
 import { EyeIcon } from "@heroicons/react/20/solid";
 import axios from "axios";
-import CircularProgress from "@mui/material/CircularProgress";
 import UserDialogbox from "./UserDialogbox";
+import MuiLoader from "../Common/MuiLoader";
 
 const DataTable = ({ count, page, rowsPerPage, onPageChange }) => {
   const theme = useTheme();
@@ -81,16 +81,16 @@ const DataTable = ({ count, page, rowsPerPage, onPageChange }) => {
   );
 };
 
-function createData(name, calories, fat, gender, height) {
-  return { name, calories, fat, gender, height };
-}
-
 const headers = ["Name", "Gender", "Height", "Weight", "Films", "Action"];
 
 export default function CustomPaginationActionsTable() {
   const [prevPageIndex, setPrevPageIndex] = useState("");
   const [nextPageIndex, setNextPageIndex] = useState("");
-  const [openDialog, setOpenDialog] = useState(false);
+  const [defaultApiUrlString, setDefaultApiUrlString] = useState(
+    "https://swapi.dev/api/people"
+  );
+  const [defaultQueryString, setDefaultQueryString] = useState("/");
+  const [openDialogObj, setOpenDialogObj] = useState({ open: false, url: "" });
   const [isFetching, setIsFetching] = useState(true);
   const [tableData, setTableData] = useState([]);
   const [page, setPage] = useState(0);
@@ -98,7 +98,11 @@ export default function CustomPaginationActionsTable() {
 
   const getSwapiPeoplesData = () => {
     axios
-      .get(`https://swapi.dev/api/people/`)
+      .get(
+        `https://swapi.dev/api/people/${
+          nextPageIndex !== "" ? parseInt(nextPageIndex) : nextPageIndex
+        }`
+      )
       .then((response) => {
         const nextPageUrl =
           response?.data?.next !== null ? response?.data?.next : "";
@@ -134,9 +138,7 @@ export default function CustomPaginationActionsTable() {
   return (
     <div>
       {isFetching ? (
-        <div className="flex items-center justify-center py-10">
-          <CircularProgress />
-        </div>
+        <MuiLoader />
       ) : (
         <TableContainer component={Paper}>
           <Table sx={{ minWidth: 500 }} aria-label="custom pagination table">
@@ -185,7 +187,9 @@ export default function CustomPaginationActionsTable() {
                   <TableCell style={{ width: 160 }} align="right">
                     <div className="flex items-center justify-end">
                       <button
-                        onClick={() => setOpenDialog(true)}
+                        onClick={() =>
+                          setOpenDialogObj({ open: true, url: row.url })
+                        }
                         className="flex items-center justify-center gap-1 border px-2 py-1 rounded-md"
                       >
                         <EyeIcon className="h-6 w-6 text-gray-500" />
@@ -204,7 +208,7 @@ export default function CustomPaginationActionsTable() {
             <TableFooter>
               <TableRow>
                 <TablePagination
-                  rowsPerPageOptions={[5, 10, 20]}
+                  rowsPerPageOptions={[5, 10]}
                   colSpan={6}
                   count={tableData?.length}
                   rowsPerPage={rowsPerPage}
@@ -232,8 +236,8 @@ export default function CustomPaginationActionsTable() {
           </Table>
         </TableContainer>
       )}
-      {openDialog && (
-        <UserDialogbox openDialog={openDialog} setter={setOpenDialog} />
+      {openDialogObj.open && (
+        <UserDialogbox openDialog={openDialogObj} setter={setOpenDialogObj} />
       )}
     </div>
   );
