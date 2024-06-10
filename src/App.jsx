@@ -13,9 +13,9 @@ function App() {
       <Route path="login" element={<SigninPage />} />
       <Route path="signup" element={<SignupPage />} />
       <Route path="forgot-password" element={<ForgotPassword />} />
-      {/* <Route element={<ProtectedRoute />}> */}
-      <Route path="" element={<Homepage />} />
-      {/* </Route> */}
+      <Route element={<ProtectedRoute />}>
+        <Route path="" element={<Homepage />} />
+      </Route>
       <Route path="*" element={<PageNotFound />} />
     </Routes>
   );

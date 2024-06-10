@@ -1,5 +1,5 @@
 export const Baseurl = {
-  baseurl: "https://node-blog-gt8z.onrender.com",
-  // below line is local testing purposes only
-  // baseurl: "http://localhost:3000",
+  baseurl: "https://mobile-first-mern-bd-api.onrender.com",
+  // below line is local developement purposes only
+//   baseurl: "http://localhost:3000",
 };
