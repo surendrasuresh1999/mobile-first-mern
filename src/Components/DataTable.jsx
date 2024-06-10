@@ -1,115 +1,39 @@
 import React, { useEffect, useState } from "react";
-import { useTheme } from "@mui/material/styles";
-import Box from "@mui/material/Box";
 import Table from "@mui/material/Table";
 import TableBody from "@mui/material/TableBody";
 import TableCell from "@mui/material/TableCell";
 import TableContainer from "@mui/material/TableContainer";
 import TableFooter from "@mui/material/TableFooter";
-import TablePagination from "@mui/material/TablePagination";
 import TableRow from "@mui/material/TableRow";
 import TableHead from "@mui/material/TableHead"; // Add TableHead import
 import Paper from "@mui/material/Paper";
 import IconButton from "@mui/material/IconButton";
-import FirstPageIcon from "@mui/icons-material/FirstPage";
 import KeyboardArrowLeft from "@mui/icons-material/KeyboardArrowLeft";
 import KeyboardArrowRight from "@mui/icons-material/KeyboardArrowRight";
-import LastPageIcon from "@mui/icons-material/LastPage";
 import { EyeIcon } from "@heroicons/react/20/solid";
 import axios from "axios";
 import UserDialogbox from "./UserDialogbox";
 import MuiLoader from "../Common/MuiLoader";
-
-const DataTable = ({ count, page, rowsPerPage, onPageChange }) => {
-  const theme = useTheme();
-
-  const handleFirstPageButtonClick = () => {
-    onPageChange(0);
-  };
-
-  const handleBackButtonClick = () => {
-    onPageChange(page - 1);
-  };
-
-  const handleNextButtonClick = () => {
-    onPageChange(page + 1);
-  };
-
-  const handleLastPageButtonClick = () => {
-    onPageChange(Math.max(0, Math.ceil(count / rowsPerPage) - 1));
-  };
-
-  return (
-    <Box sx={{ flexShrink: 0, ml: 2.5 }}>
-      <IconButton
-        onClick={handleFirstPageButtonClick}
-        disabled={page === 0}
-        aria-label="first page"
-      >
-        {theme.direction === "rtl" ? <LastPageIcon /> : <FirstPageIcon />}
-      </IconButton>
-      <IconButton
-        onClick={handleBackButtonClick}
-        disabled={page === 0}
-        aria-label="previous page"
-      >
-        {theme.direction === "rtl" ? (
-          <KeyboardArrowRight />
-        ) : (
-          <KeyboardArrowLeft />
-        )}
-      </IconButton>
-      <IconButton
-        onClick={handleNextButtonClick}
-        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-        aria-label="next page"
-      >
-        {theme.direction === "rtl" ? (
-          <KeyboardArrowLeft />
-        ) : (
-          <KeyboardArrowRight />
-        )}
-      </IconButton>
-      <IconButton
-        onClick={handleLastPageButtonClick}
-        disabled={page >= Math.ceil(count / rowsPerPage) - 1}
-        aria-label="last page"
-      >
-        {theme.direction === "rtl" ? <FirstPageIcon /> : <LastPageIcon />}
-      </IconButton>
-    </Box>
-  );
-};
-
 const headers = ["Name", "Gender", "Height", "Weight", "Films", "Action"];
 
-export default function CustomPaginationActionsTable() {
-  const [prevPageIndex, setPrevPageIndex] = useState("");
-  const [nextPageIndex, setNextPageIndex] = useState("");
-  const [defaultApiUrlString, setDefaultApiUrlString] = useState(
-    "https://swapi.dev/api/people"
-  );
-  const [defaultQueryString, setDefaultQueryString] = useState("/");
+const CustomPaginationActionsTable = () => {
+  const [pageIndex, setPageIndex] = useState(1);
+  const [nextIsAvailable, setNextIsAvailable] = useState(false);
+  const [prevIsAvailable, setPrevIsAvailable] = useState(false);
   const [openDialogObj, setOpenDialogObj] = useState({ open: false, url: "" });
   const [isFetching, setIsFetching] = useState(true);
   const [tableData, setTableData] = useState([]);
-  const [page, setPage] = useState(0);
-  const [rowsPerPage, setRowsPerPage] = useState(5);
 
   const getSwapiPeoplesData = () => {
     axios
-      .get(
-        `https://swapi.dev/api/people/${
-          nextPageIndex !== "" ? parseInt(nextPageIndex) : nextPageIndex
-        }`
-      )
+      .get(`https://swapi.dev/api/people/?page=${pageIndex}`)
       .then((response) => {
-        const nextPageUrl =
-          response?.data?.next !== null ? response?.data?.next : "";
-        const prevPageUrl =
-          response?.data?.prev !== null ? response?.data?.prev : "";
-        setNextPageIndex(nextPageUrl?.match(/page=(\d+)/)[1]);
-        setPrevPageIndex(prevPageUrl?.match(/page=(\d+)/)[1]);
+        response?.data?.next !== null
+          ? setNextIsAvailable(true)
+          : setNextIsAvailable(false);
+        response?.data?.previous !== null
+          ? setPrevIsAvailable(true)
+          : setPrevIsAvailable(false);
         setTableData(response?.data?.results);
         setIsFetching(false);
       })
@@ -120,20 +44,7 @@ export default function CustomPaginationActionsTable() {
 
   useEffect(() => {
     getSwapiPeoplesData();
-  }, []);
-
-  // Avoid a layout jump when reaching the last page with empty rows.
-  const emptyRows =
-    page > 0 ? Math.max(0, (1 + page) * rowsPerPage - tableData.length) : 0;
-
-  const handleChangePage = (newPage) => {
-    setPage(newPage);
-  };
-
-  const handleChangeRowsPerPage = (event) => {
-    setRowsPerPage(parseInt(event.target.value, 10));
-    setPage(0);
-  };
+  }, [pageIndex]);
 
   return (
     <div>
@@ -161,13 +72,7 @@ export default function CustomPaginationActionsTable() {
               </TableRow>
             </TableHead>
             <TableBody>
-              {(rowsPerPage > 0
-                ? tableData?.slice(
-                    page * rowsPerPage,
-                    page * rowsPerPage + rowsPerPage
-                  )
-                : tableData
-              )?.map((row) => (
+              {tableData?.map((row) => (
                 <TableRow key={row.name}>
                   <TableCell component="th" scope="row">
                     {row.name}
@@ -199,38 +104,37 @@ export default function CustomPaginationActionsTable() {
                   </TableCell>
                 </TableRow>
               ))}
-              {emptyRows > 0 && (
-                <TableRow style={{ height: 53 * emptyRows }}>
-                  <TableCell colSpan={6} />
-                </TableRow>
-              )}
             </TableBody>
+
             <TableFooter>
               <TableRow>
-                <TablePagination
-                  rowsPerPageOptions={[5, 10]}
-                  colSpan={6}
-                  count={tableData?.length}
-                  rowsPerPage={rowsPerPage}
-                  page={page}
-                  SelectProps={{
-                    inputProps: {
-                      "aria-label": "rows per page",
-                    },
-                    native: true,
-                  }}
-                  onPageChange={handleChangePage}
-                  onRowsPerPageChange={handleChangeRowsPerPage}
-                  ActionsComponent={(props) => (
-                    <DataTable
-                      {...props}
-                      count={tableData?.length}
-                      page={page}
-                      rowsPerPage={rowsPerPage}
-                      onPageChange={handleChangePage}
-                    />
-                  )}
-                />
+                <TableCell colSpan={6}>
+                  <div className="flex items-center justify-end gap-3">
+                    <span className="font-bold text-14size text-black">Current page: {pageIndex}</span>
+                    <IconButton
+                      onClick={() => {
+                        setIsFetching(true);
+                        if (pageIndex !== 0) {
+                          setPageIndex((prevIndex) => prevIndex - 1);
+                        }
+                      }}
+                      disabled={!prevIsAvailable}
+                      aria-label="previous page"
+                    >
+                      <KeyboardArrowLeft />
+                    </IconButton>
+                    <IconButton
+                      onClick={() => {
+                        setIsFetching(true);
+                        setPageIndex((prevIndex) => prevIndex + 1);
+                      }}
+                      disabled={!nextIsAvailable}
+                      aria-label="next page"
+                    >
+                      <KeyboardArrowRight />
+                    </IconButton>
+                  </div>
+                </TableCell>
               </TableRow>
             </TableFooter>
           </Table>
@@ -241,4 +145,6 @@ export default function CustomPaginationActionsTable() {
       )}
     </div>
   );
-}
+};
+
+export default CustomPaginationActionsTable;
